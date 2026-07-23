@@ -169,6 +169,11 @@ __pycache__/
 # #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 # #.idea/
 
+# Portable rebuild output and per-install secret
+/.build/
+/dist/
+/config/.secret
+
 # # Ruff stuff:
 # .ruff_cache/
 

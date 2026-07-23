@@ -1,0 +1,443 @@
+/*
+ * Wowtran Search theme
+ * Inspired by the restrained liquid-glass palette in D:\AI\Term\index.html.
+ */
+
+:root.theme-auto,
+:root.theme-light {
+  color-scheme: light;
+
+  --wow-bg: #edeff4;
+  --wow-bg-soft: rgba(255, 255, 255, 0.56);
+  --wow-surface: rgba(255, 255, 255, 0.72);
+  --wow-surface-strong: rgba(255, 255, 255, 0.88);
+  --wow-border: rgba(38, 50, 72, 0.13);
+  --wow-line: rgba(38, 50, 72, 0.09);
+  --wow-text: #1e2632;
+  --wow-muted: #5b6779;
+  --wow-accent: #c76a2e;
+  --wow-accent-strong: #a9501e;
+  --wow-accent-soft: rgba(199, 106, 46, 0.13);
+  --wow-link: #2f6fd8;
+  --wow-link-visited: #7253a6;
+  --wow-glow-warm: rgba(230, 146, 72, 0.28);
+  --wow-glow-cool: rgba(98, 150, 246, 0.20);
+  --wow-shadow: 0 18px 48px rgba(44, 58, 84, 0.13);
+
+  --color-base-font: var(--wow-text);
+  --color-base-font-rgb: 30, 38, 50;
+  --color-base-background: var(--wow-bg);
+  --color-base-background-mobile: var(--wow-bg);
+  --color-url-font: var(--wow-muted);
+  --color-url-visited-font: var(--wow-link-visited);
+  --color-header-background: var(--wow-surface);
+  --color-header-border: var(--wow-border);
+  --color-footer-background: var(--wow-surface);
+  --color-footer-border: var(--wow-border);
+  --color-sidebar-border: var(--wow-border);
+  --color-sidebar-font: var(--wow-text);
+  --color-sidebar-background: var(--wow-surface);
+  --color-backtotop-font: var(--wow-text);
+  --color-backtotop-border: var(--wow-border);
+  --color-backtotop-background: var(--wow-surface-strong);
+  --color-btn-background: var(--wow-accent);
+  --color-btn-font: #ffffff;
+  --color-show-btn-background: var(--wow-surface-strong);
+  --color-show-btn-font: var(--wow-text);
+  --color-search-border: var(--wow-border);
+  --color-search-shadow: 0 10px 30px rgba(44, 58, 84, 0.14);
+  --color-search-background: var(--wow-surface-strong);
+  --color-search-font: var(--wow-text);
+  --color-search-background-hover: var(--wow-accent);
+  --color-categories-item-selected-font: var(--wow-accent-strong);
+  --color-categories-item-border-selected: var(--wow-accent);
+  --color-autocomplete-font: var(--wow-text);
+  --color-autocomplete-border: var(--wow-border);
+  --color-autocomplete-shadow: var(--wow-shadow);
+  --color-autocomplete-background: var(--wow-surface-strong);
+  --color-autocomplete-background-hover: var(--wow-accent-soft);
+  --color-answer-font: var(--wow-text);
+  --color-answer-background: var(--wow-surface);
+  --color-result-keyvalue-col-table: var(--wow-surface);
+  --color-result-keyvalue-odd: var(--wow-bg-soft);
+  --color-result-keyvalue-even: var(--wow-surface);
+  --color-result-background: var(--wow-surface);
+  --color-result-border: var(--wow-border);
+  --color-result-url-font: var(--wow-muted);
+  --color-result-vim-selected: var(--wow-accent-soft);
+  --color-result-vim-arrow: var(--wow-accent);
+  --color-result-description-highlight-font: var(--wow-text);
+  --color-result-link-font: var(--wow-link);
+  --color-result-link-font-highlight: var(--wow-link);
+  --color-result-link-visited-font: var(--wow-link-visited);
+  --color-result-publishdate-font: var(--wow-muted);
+  --color-result-engines-font: var(--wow-muted);
+  --color-result-search-url-border: var(--wow-border);
+  --color-result-search-url-font: var(--wow-text);
+  --color-settings-tr-hover: var(--wow-accent-soft);
+  --color-settings-engine-description-font: var(--wow-muted);
+  --color-settings-table-group-background: var(--wow-bg-soft);
+  --color-toolkit-dialog-border: var(--wow-border);
+  --color-toolkit-dialog-background: var(--wow-surface-strong);
+  --color-toolkit-tabs-label-border: var(--wow-border);
+  --color-toolkit-tabs-section-border: var(--wow-border);
+  --color-toolkit-select-background: var(--wow-surface-strong);
+  --color-toolkit-select-border: var(--wow-border);
+  --color-toolkit-select-background-hover: var(--wow-accent-soft);
+  --color-toolkit-input-text-font: var(--wow-text);
+  --color-toolkit-checkbox-onoff-on-mark-background: var(--wow-accent);
+  --color-toolkit-checkbox-input-border: var(--wow-accent);
+  --color-toolkit-engine-tooltip-border: var(--wow-border);
+  --color-toolkit-engine-tooltip-background: var(--wow-surface-strong);
+}
+
+:root.theme-dark {
+  color-scheme: dark;
+
+  --wow-bg: #0b0d12;
+  --wow-bg-soft: rgba(255, 255, 255, 0.05);
+  --wow-surface: rgba(28, 32, 42, 0.72);
+  --wow-surface-strong: rgba(34, 38, 50, 0.90);
+  --wow-border: rgba(255, 255, 255, 0.11);
+  --wow-line: rgba(255, 255, 255, 0.08);
+  --wow-text: #e9ebf1;
+  --wow-muted: #a2abbc;
+  --wow-accent: #e08a44;
+  --wow-accent-strong: #f0b478;
+  --wow-accent-soft: rgba(224, 138, 68, 0.17);
+  --wow-link: #7aa7f0;
+  --wow-link-visited: #c3a4e4;
+  --wow-glow-warm: rgba(216, 122, 50, 0.19);
+  --wow-glow-cool: rgba(76, 116, 228, 0.14);
+  --wow-shadow: 0 22px 56px rgba(0, 0, 0, 0.44);
+
+  --color-base-font: var(--wow-text);
+  --color-base-font-rgb: 233, 235, 241;
+  --color-base-background: var(--wow-bg);
+  --color-base-background-mobile: var(--wow-bg);
+  --color-url-font: var(--wow-muted);
+  --color-url-visited-font: var(--wow-link-visited);
+  --color-header-background: var(--wow-surface);
+  --color-header-border: var(--wow-border);
+  --color-footer-background: var(--wow-surface);
+  --color-footer-border: var(--wow-border);
+  --color-sidebar-border: var(--wow-border);
+  --color-sidebar-font: var(--wow-text);
+  --color-sidebar-background: var(--wow-surface);
+  --color-backtotop-font: var(--wow-text);
+  --color-backtotop-border: var(--wow-border);
+  --color-backtotop-background: var(--wow-surface-strong);
+  --color-btn-background: var(--wow-accent);
+  --color-btn-font: #15171d;
+  --color-show-btn-background: var(--wow-bg-soft);
+  --color-show-btn-font: var(--wow-text);
+  --color-search-border: var(--wow-border);
+  --color-search-shadow: 0 12px 34px rgba(0, 0, 0, 0.34);
+  --color-search-background: var(--wow-surface-strong);
+  --color-search-font: var(--wow-text);
+  --color-search-background-hover: var(--wow-accent);
+  --color-categories-item-selected-font: var(--wow-accent-strong);
+  --color-categories-item-border-selected: var(--wow-accent);
+  --color-autocomplete-font: var(--wow-text);
+  --color-autocomplete-border: var(--wow-border);
+  --color-autocomplete-shadow: var(--wow-shadow);
+  --color-autocomplete-background: var(--wow-surface-strong);
+  --color-autocomplete-background-hover: var(--wow-accent-soft);
+  --color-answer-font: var(--wow-text);
+  --color-answer-background: var(--wow-surface);
+  --color-result-keyvalue-col-table: var(--wow-surface);
+  --color-result-keyvalue-odd: var(--wow-bg-soft);
+  --color-result-keyvalue-even: var(--wow-surface);
+  --color-result-background: var(--wow-surface);
+  --color-result-border: var(--wow-border);
+  --color-result-url-font: var(--wow-muted);
+  --color-result-vim-selected: var(--wow-accent-soft);
+  --color-result-vim-arrow: var(--wow-accent);
+  --color-result-description-highlight-font: var(--wow-text);
+  --color-result-link-font: var(--wow-link);
+  --color-result-link-font-highlight: var(--wow-link);
+  --color-result-link-visited-font: var(--wow-link-visited);
+  --color-result-publishdate-font: var(--wow-muted);
+  --color-result-engines-font: var(--wow-muted);
+  --color-result-search-url-border: var(--wow-border);
+  --color-result-search-url-font: var(--wow-text);
+  --color-settings-tr-hover: var(--wow-accent-soft);
+  --color-settings-engine-description-font: var(--wow-muted);
+  --color-settings-table-group-background: var(--wow-bg-soft);
+  --color-toolkit-dialog-border: var(--wow-border);
+  --color-toolkit-dialog-background: var(--wow-surface-strong);
+  --color-toolkit-tabs-label-border: var(--wow-border);
+  --color-toolkit-tabs-section-border: var(--wow-border);
+  --color-toolkit-select-background: var(--wow-surface-strong);
+  --color-toolkit-select-border: var(--wow-border);
+  --color-toolkit-select-background-hover: var(--wow-accent-soft);
+  --color-toolkit-input-text-font: var(--wow-text);
+  --color-toolkit-checkbox-onoff-on-mark-background: var(--wow-accent);
+  --color-toolkit-checkbox-input-border: var(--wow-accent);
+  --color-toolkit-engine-tooltip-border: var(--wow-border);
+  --color-toolkit-engine-tooltip-background: var(--wow-surface-strong);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root.theme-auto {
+    color-scheme: dark;
+
+    --wow-bg: #0b0d12;
+    --wow-bg-soft: rgba(255, 255, 255, 0.05);
+    --wow-surface: rgba(28, 32, 42, 0.72);
+    --wow-surface-strong: rgba(34, 38, 50, 0.90);
+    --wow-border: rgba(255, 255, 255, 0.11);
+    --wow-line: rgba(255, 255, 255, 0.08);
+    --wow-text: #e9ebf1;
+    --wow-muted: #a2abbc;
+    --wow-accent: #e08a44;
+    --wow-accent-strong: #f0b478;
+    --wow-accent-soft: rgba(224, 138, 68, 0.17);
+    --wow-link: #7aa7f0;
+    --wow-link-visited: #c3a4e4;
+    --wow-glow-warm: rgba(216, 122, 50, 0.19);
+    --wow-glow-cool: rgba(76, 116, 228, 0.14);
+    --wow-shadow: 0 22px 56px rgba(0, 0, 0, 0.44);
+
+    --color-base-font: var(--wow-text);
+    --color-base-font-rgb: 233, 235, 241;
+    --color-base-background: var(--wow-bg);
+    --color-base-background-mobile: var(--wow-bg);
+    --color-url-font: var(--wow-muted);
+    --color-url-visited-font: var(--wow-link-visited);
+    --color-header-background: var(--wow-surface);
+    --color-header-border: var(--wow-border);
+    --color-footer-background: var(--wow-surface);
+    --color-footer-border: var(--wow-border);
+    --color-sidebar-font: var(--wow-text);
+    --color-sidebar-background: var(--wow-surface);
+    --color-search-border: var(--wow-border);
+    --color-search-background: var(--wow-surface-strong);
+    --color-search-font: var(--wow-text);
+    --color-result-background: var(--wow-surface);
+    --color-result-border: var(--wow-border);
+    --color-result-link-font: var(--wow-link);
+    --color-result-link-font-highlight: var(--wow-link);
+    --color-result-link-visited-font: var(--wow-link-visited);
+    --color-result-url-font: var(--wow-muted);
+    --color-result-publishdate-font: var(--wow-muted);
+    --color-result-engines-font: var(--wow-muted);
+    --color-categories-item-selected-font: var(--wow-accent-strong);
+    --color-categories-item-border-selected: var(--wow-accent);
+    --color-btn-background: var(--wow-accent);
+    --color-btn-font: #15171d;
+    --color-toolkit-select-background: var(--wow-surface-strong);
+    --color-toolkit-select-border: var(--wow-border);
+    --color-toolkit-input-text-font: var(--wow-text);
+  }
+}
+
+body {
+  min-height: 100vh;
+  font-family: "Segoe UI Variable Text", "Segoe UI", -apple-system, BlinkMacSystemFont,
+    "PingFang SC", "Microsoft YaHei", sans-serif;
+  background:
+    radial-gradient(72rem 46rem at 6% -10%, var(--wow-glow-warm), transparent 57%),
+    radial-gradient(62rem 44rem at 96% 4%, var(--wow-glow-cool), transparent 58%),
+    var(--wow-bg);
+  background-attachment: fixed;
+  transition: background-color 180ms ease, color 180ms ease;
+}
+
+#search_header,
+#links_on_top,
+footer {
+  backdrop-filter: blur(18px) saturate(1.25);
+  -webkit-backdrop-filter: blur(18px) saturate(1.25);
+}
+
+#links_on_top {
+  z-index: 1500;
+}
+
+#main_results article.result,
+.answer,
+.infobox {
+  border: 1px solid var(--wow-border);
+  border-radius: 16px;
+  background: var(--wow-surface);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+#main_results article.result {
+  margin-bottom: 0.7rem;
+  transition: border-color 160ms ease, background-color 160ms ease, transform 160ms ease;
+}
+
+#main_results article.result:hover {
+  border-color: color-mix(in srgb, var(--wow-accent) 34%, var(--wow-border));
+  transform: translateY(-1px);
+}
+
+a:focus-visible,
+button:focus-visible,
+select:focus-visible,
+input:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--wow-accent) 45%, transparent);
+  outline-offset: 3px;
+}
+
+.sxng-theme-switcher {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  margin-left: 1rem;
+}
+
+.sxng-theme-trigger {
+  min-height: 2.4rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.45rem 0.72rem;
+  border: 1px solid var(--wow-border);
+  border-radius: 12px;
+  color: var(--wow-text);
+  background: var(--wow-bg-soft);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  cursor: pointer;
+  line-height: 1;
+  transition: border-color 160ms ease, background-color 160ms ease, transform 160ms ease;
+}
+
+#links_on_top .sxng-theme-symbol {
+  display: grid !important;
+}
+
+#links_on_top .sxng-theme-label {
+  display: inline !important;
+}
+
+#links_on_top .sxng-theme-menu .sxng-theme-option-icon {
+  display: block !important;
+}
+
+#links_on_top .sxng-theme-menu .sxng-theme-option-copy {
+  display: flex !important;
+}
+
+.sxng-theme-trigger:hover,
+.sxng-theme-trigger[aria-expanded="true"] {
+  border-color: color-mix(in srgb, var(--wow-accent) 42%, var(--wow-border));
+  background: var(--wow-accent-soft);
+}
+
+.sxng-theme-trigger:active {
+  transform: translateY(1px);
+}
+
+.sxng-theme-symbol {
+  width: 1.35rem;
+  height: 1.35rem;
+  display: grid;
+  place-items: center;
+  color: var(--wow-accent);
+  font-size: 1.05rem;
+}
+
+.sxng-theme-label {
+  color: var(--wow-muted);
+  font-size: 0.88rem;
+  white-space: nowrap;
+}
+
+.sxng-theme-menu {
+  position: absolute;
+  z-index: 2000;
+  top: calc(100% + 0.55rem);
+  right: 0;
+  width: 10.6rem;
+  padding: 0.4rem;
+  border: 1px solid var(--wow-border);
+  border-radius: 15px;
+  background: var(--wow-surface-strong);
+  box-shadow: var(--wow-shadow);
+  backdrop-filter: blur(22px) saturate(1.4);
+  -webkit-backdrop-filter: blur(22px) saturate(1.4);
+}
+
+.sxng-theme-menu[hidden] {
+  display: none;
+}
+
+.sxng-theme-option {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1.55rem 1fr auto;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.62rem 0.65rem;
+  border: 0;
+  border-radius: 10px;
+  color: var(--wow-text);
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+}
+
+.sxng-theme-option:hover,
+.sxng-theme-option[aria-selected="true"] {
+  background: var(--wow-accent-soft);
+}
+
+.sxng-theme-option[aria-selected="true"]::after {
+  content: "✓";
+  color: var(--wow-accent);
+  font-weight: 700;
+}
+
+.sxng-theme-option-icon {
+  color: var(--wow-accent);
+  text-align: center;
+}
+
+.sxng-theme-option-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 0.14rem;
+}
+
+.sxng-theme-option-copy strong {
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.sxng-theme-option-copy small {
+  color: var(--wow-muted);
+  font-size: 0.72rem;
+}
+
+@media screen and (max-width: 50em) {
+  #links_on_top .sxng-theme-label {
+    display: none !important;
+  }
+
+  .sxng-theme-trigger {
+    width: 2.5rem;
+    justify-content: center;
+    padding-inline: 0;
+  }
+
+  .sxng-theme-menu {
+    position: fixed;
+    top: 4.25rem;
+    right: 0.75rem;
+  }
+
+  #main_results article.result {
+    border-radius: 13px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body,
+  #main_results article.result,
+  .sxng-theme-trigger {
+    transition: none;
+  }
+}
