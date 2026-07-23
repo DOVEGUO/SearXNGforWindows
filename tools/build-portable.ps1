@@ -160,6 +160,58 @@ if ($WebUtilsText -match "file_list\.append\(str\(f\.relative_to\(static_path\)\
 }
 [IO.File]::WriteAllText($WebUtils, $WebUtilsText, (New-Object Text.UTF8Encoding($false)))
 
+# Relative redirects remain valid behind reverse proxies that do not forward a
+# usable Host header.  Absolute redirects otherwise become "http:///".
+$WebApp = Join-Path $SitePackages "searx\webapp.py"
+$WebAppText = [IO.File]::ReadAllText($WebApp)
+$PreferencesStart = $WebAppText.IndexOf("@app.route('/preferences', methods=['GET', 'POST'])")
+$PreferencesEnd = $WebAppText.IndexOf("app.add_url_rule('/favicon_proxy'", $PreferencesStart)
+if ($PreferencesStart -lt 0 -or $PreferencesEnd -lt 0) {
+    throw "Unable to locate the preferences route in searx/webapp.py"
+}
+$PreferencesBlock = $WebAppText.Substring($PreferencesStart, $PreferencesEnd - $PreferencesStart)
+$PreferencesBlock = $PreferencesBlock.Replace(
+    "redirect(url_for('index', _external=True))",
+    "redirect(url_for('index'))"
+)
+if ($PreferencesBlock -match "url_for\('index', _external=True\)") {
+    throw "Reverse-proxy preferences redirect patch did not apply"
+}
+$WebAppText = $WebAppText.Substring(0, $PreferencesStart) + $PreferencesBlock + $WebAppText.Substring($PreferencesEnd)
+[IO.File]::WriteAllText($WebApp, $WebAppText, (New-Object Text.UTF8Encoding($false)))
+
+# SearXNG's upstream "auto" choice follows the browser Accept-Language header.
+# For this multilingual instance, use the neutral locale so Google and Bing can
+# infer the language from the query instead.
+$WebAdapter = Join-Path $SitePackages "searx\webadapter.py"
+$WebAdapterText = [IO.File]::ReadAllText($WebAdapter)
+$AutoLanguagePattern = "(?m)^    if query_lang == 'auto':\r?\n        query_lang = preferences\.client\.locale_tag or 'all'\r?$"
+$AutoLanguageNew = @"
+    if query_lang == 'auto':
+        # Do not force the browser's UI language onto the search engines.
+        # With the neutral locale, Google and Bing can infer the language from
+        # the query itself, which is more accurate for multilingual users.
+        query_lang = 'all'
+"@.TrimEnd()
+$WebAdapterText = [regex]::Replace($WebAdapterText, $AutoLanguagePattern, $AutoLanguageNew)
+if ($WebAdapterText -match "query_lang = preferences\.client\.locale_tag or 'all'") {
+    throw "Query-language auto-detection patch did not apply"
+}
+[IO.File]::WriteAllText($WebAdapter, $WebAdapterText, (New-Object Text.UTF8Encoding($false)))
+
+# The effective locale is deliberately neutral in auto mode, so do not render
+# the implementation value "(all)" as if it were the detected query language.
+$LanguageFilter = Join-Path $SitePackages "searx\templates\simple\filters\languages.html"
+$LanguageFilterText = [IO.File]::ReadAllText($LanguageFilter)
+$LanguageFilterText = $LanguageFilterText.Replace(
+    "{{- _('Auto-detect') }} ({{ search_language }})  {{- '' -}}",
+    "{{- _('Auto-detect') }}  {{- '' -}}"
+)
+if ($LanguageFilterText -match "\(\{\{ search_language \}\}\)") {
+    throw "Auto-language label patch did not apply"
+}
+[IO.File]::WriteAllText($LanguageFilter, $LanguageFilterText, (New-Object Text.UTF8Encoding($false)))
+
 # Replace upstream project links with the operator's legal footer.
 $BaseTemplate = Join-Path $SitePackages "searx\templates\simple\base.html"
 $BaseTemplateText = [IO.File]::ReadAllText($BaseTemplate)
@@ -186,13 +238,13 @@ $BaseTemplateText = $BaseTemplateText.Replace(
 $BaseTemplateText = $BaseTemplateText.Replace(
     '  <script type="module" src="{{ url_for(''static'', filename=''sxng-core.min.js'') }}" client_settings="{{ client_settings }}"></script>',
     '  <script type="module" src="{{ url_for(''static'', filename=''sxng-core.min.js'') }}" client_settings="{{ client_settings }}"></script>' + [Environment]::NewLine +
-    '  <script defer src="{{ url_for(''static'', filename=''themes/simple/wowtran-theme.js'') }}?v=20260723-5"></script>'
+    '  <script defer src="{{ url_for(''static'', filename=''themes/simple/wowtran-theme.js'') }}?v=20260724-7"></script>'
 )
 $BaseTemplateText = [regex]::Replace(
     $BaseTemplateText,
     '  \{% endif %\}\r?\n  \{% if get_setting\(''server\.limiter''\) or get_setting\(''server\.public_instance''\) %\}',
     '  {% endif %}' + [Environment]::NewLine +
-    '  <link rel="stylesheet" href="{{ url_for(''static'', filename=''themes/simple/wowtran-theme.css'') }}?v=20260723-5" type="text/css" media="screen">' + [Environment]::NewLine +
+    '  <link rel="stylesheet" href="{{ url_for(''static'', filename=''themes/simple/wowtran-theme.css'') }}?v=20260724-7" type="text/css" media="screen">' + [Environment]::NewLine +
     '  {% if get_setting(''server.limiter'') or get_setting(''server.public_instance'') %}',
     1
 )

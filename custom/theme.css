@@ -282,6 +282,46 @@ input:focus-visible {
   outline-offset: 3px;
 }
 
+/* Keep the search identity in the same warm accent as the active theme.
+   Masking the upstream PNG preserves its shape while allowing live recoloring. */
+.index .title {
+  position: relative;
+  background: none;
+}
+
+.index .title::before {
+  content: "";
+  display: block;
+  width: min(18rem, 72vw);
+  height: 4rem;
+  margin: 0 auto;
+  background-color: var(--wow-accent);
+  -webkit-mask: url("./img/searxng.png") center / contain no-repeat;
+  mask: url("./img/searxng.png") center / contain no-repeat;
+}
+
+.index .title h1 {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+#send_search {
+  color: var(--wow-accent);
+}
+
+#send_search:hover,
+#send_search:focus-visible {
+  color: var(--wow-accent-strong);
+  background-color: var(--wow-accent-soft);
+}
+
 .sxng-theme-switcher {
   position: relative;
   display: inline-flex;
@@ -431,6 +471,17 @@ input:focus-visible {
 
   #main_results article.result {
     border-radius: 13px;
+  }
+}
+
+@media screen and (max-width: 35em) {
+  /* Upstream keeps the thumbnail link floated after un-floating its image.
+     That makes multi-line titles wrap beside an invisible float on phones. */
+  #main_results article.result a.thumbnail_link {
+    display: inline-block;
+    float: none;
+    max-width: 100%;
+    margin: 0.6rem 0 0.7rem;
   }
 }
 
