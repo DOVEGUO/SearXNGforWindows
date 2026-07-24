@@ -3,6 +3,7 @@ use_default_settings:
     keep_only:
       - google
       - bing
+      - baidu
       - google images
       - bing images
       - google news
@@ -62,9 +63,20 @@ engines:
   - name: bing
     disabled: false
     timeout: 30.0
+    paging: true
     # Prefer Google CSE in the mixed ranking; Bing via proxy is noisier for
-    # Chinese exact-match queries.
-    weight: 0.6
+    # Chinese exact-match queries and often soft-blocked.
+    weight: 0.4
+
+  - name: baidu
+    # Chinese-query fallback when Google CSE is 429-suspended and Bing is
+    # captcha/soft-blocked through the outbound proxy.
+    baidu_category: general
+    categories: [general]
+    engine: baidu
+    disabled: false
+    timeout: 30.0
+    weight: 1.1
 
   - name: google images
     engine: google_cse

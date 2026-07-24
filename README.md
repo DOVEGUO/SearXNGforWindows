@@ -30,7 +30,8 @@ outgoing:
 它只影响 SearXNG 向 Google、Bing 等搜索引擎发出的请求。启动脚本不会修改
 Windows 系统代理、WinHTTP 代理或其他软件的代理设置。
 
-当前配置保留 Google 和 Bing 的网页、新闻及图片搜索，并启用 Bing 自动补全。
+当前配置保留 Google、Bing、百度 的网页搜索，以及 Google/Bing 的新闻与图片搜索，并启用 Bing 自动补全。
+中文查询在 Google CSE 限流或 Bing 经代理被验证码/软拦截时，会回退到百度结果。
 图片请求通过 SearXNG 图片代理返回。HTTP/2 保持关闭，以避免 Clash 与旧版
 异步连接池组合中出现的 `anyio.EndOfStream` 问题。
 

@@ -299,9 +299,16 @@ if ($GoogleCseText -notmatch 'page_size = 10') {
 [IO.File]::WriteAllText($GoogleCse, $GoogleCseText, (New-Object Text.UTF8Encoding($false)))
 
 # Bing general: default mkt=zh-CN when SearXNG locale is neutral ``all``,
-# and enable HTML ``first`` pagination so next-page remains when Google is down.
+# enable HTML ``first`` pagination, prefer zh-Hans UI, and reject captcha /
+# soft-block junk SERPs that pollute Chinese-query ranking.
 $BingWeb = Join-Path $SitePackages "searx\engines\bing.py"
 $BingWebText = [IO.File]::ReadAllText($BingWeb)
+if ($BingWebText -notmatch 'from searx\.exceptions import SearxEngineCaptchaException') {
+    $BingWebText = $BingWebText.Replace(
+        "from searx.utils import eval_xpath, eval_xpath_getindex, eval_xpath_list, extract_text",
+        "from searx.utils import eval_xpath, eval_xpath_getindex, eval_xpath_list, extract_text`nfrom searx.exceptions import SearxEngineCaptchaException, SearxEngineAccessDeniedException"
+    )
+}
 $BingWebText = [regex]::Replace(
     $BingWebText,
     '(?m)^(?<indent>\s*)engine_region = traits\.get_region\(params\["searxng_locale"\], traits\.all_locale\)\r?\n\r?\n\k<indent>override_accept_language\(params, engine_region\)',
@@ -317,12 +324,108 @@ $BingWebText = [regex]::Replace(
     '(?m)^(?<indent>\s*)query_params: dict\[str, str \| int\] = \{\r?\n\k<indent>    "q": query,\r?\n\k<indent>    "adlt": _safesearch_map\.get\(params\.get\("safesearch", 0\), "off"\),\r?\n\k<indent>\}\r?\n\r?\n\k<indent>locale_params = get_locale_params\(engine_region\)',
     "`${indent}query_params: dict[str, str | int] = {`n`${indent}    `"q`": query,`n`${indent}    `"adlt`": _safesearch_map.get(params.get(`"safesearch`", 0), `"off`"),`n`${indent}}`n`n`${indent}pageno = int(params.get(`"pageno`", 1) or 1)`n`${indent}if pageno > 1:`n`${indent}    query_params[`"first`"] = (pageno - 1) * _results_per_page + 1`n`n`${indent}locale_params = get_locale_params(engine_region)"
 )
+$BingWebText = [regex]::Replace(
+    $BingWebText,
+    '(?m)^(?<indent>\s*)locale_params = get_locale_params\(engine_region\)\r?\n\k<indent>if locale_params:\r?\n\k<indent>    query_params\.update\(locale_params\)\r?\n\r?\n\k<indent>params\["url"\] = f"\{base_url\}/search\?\{urlencode\(query_params\)\}"',
+    @"
+`${indent}locale_params = get_locale_params(engine_region)
+`${indent}if locale_params:
+`${indent}    query_params.update(locale_params)
+
+`${indent}query_params.setdefault("setlang", "zh-Hans")
+
+`${indent}params["url"] = f"{base_url}/search?{urlencode(query_params)}"
+`${indent}params["allow_redirects"] = True
+`${indent}params.setdefault("cookies", {})
+`${indent}params["cookies"].setdefault("_EDGE_S", f"mkt={engine_region}")
+`${indent}params["cookies"].setdefault("_EDGE_CD", f"m={engine_region}")
+"@
+)
+# Inject soft-block helpers + captcha rejection into response() once.
+if ($BingWebText -notmatch '_is_soft_blocked_serp') {
+    $BingHelpers = @'
+
+def _cjk_chars(text: str) -> list[str]:
+    return [c for c in text if "\u4e00" <= c <= "\u9fff"]
+
+
+def _is_soft_blocked_serp(query: str, results: list[dict[str, t.Any]]) -> bool:
+    """Detect captcha-adjacent junk SERPs for Chinese queries."""
+
+    q_cjk = _cjk_chars(query)
+    if len(q_cjk) < 2 or not results:
+        return False
+
+    need = max(2, (len(q_cjk) + 1) // 2)
+    for item in results[:8]:
+        title = item.get("title") or ""
+        content = item.get("content") or ""
+        haystack = f"{title} {content}"
+        if query in haystack:
+            return False
+        if sum(1 for c in q_cjk if c in haystack) >= need:
+            return False
+    return True
+
+'@
+    $BingWebText = $BingWebText.Replace(
+        'def response(resp: "SXNG_Response") -> list[dict[str, t.Any]]:',
+        ($BingHelpers.TrimEnd() + "`n`n`ndef response(resp: `"SXNG_Response`") -> list[dict[str, t.Any]]:")
+    )
+}
+if ($BingWebText -notmatch 'cf-turnstile') {
+    $BingWebText = [regex]::Replace(
+        $BingWebText,
+        '(?m)^(?<indent>\s*)results: list\[dict\[str, t\.Any\]\] = \[\]\r?\n\r?\n\k<indent>dom = html\.fromstring\(resp\.text\)',
+        @"
+`${indent}text_l = resp.text.lower()
+`${indent}if (
+`${indent}    "cf-turnstile" in text_l
+`${indent}    or "challenges.cloudflare.com" in text_l
+`${indent}    or 'class="captcha"' in text_l
+`${indent}    or "请解决以下难题" in resp.text
+`${indent}    or "/challenge/verify" in text_l
+`${indent}):
+`${indent}    raise SearxEngineCaptchaException()
+
+`${indent}results: list[dict[str, t.Any]] = []
+
+`${indent}dom = html.fromstring(resp.text)
+"@
+    )
+}
+if ($BingWebText -notmatch 'Bing returned an unrelated soft-block SERP') {
+    $BingWebText = [regex]::Replace(
+        $BingWebText,
+        '(?m)^(?<indent>\s*)results\.append\(\{"url": href, "title": title, "content": content\}\)\r?\n\r?\n(?<indent2>\s*)return results',
+        @"
+`${indent}results.append({"url": href, "title": title, "content": content})
+
+`${indent2}query = ""
+`${indent2}try:
+`${indent2}    query = str(resp.search_params.get("query") or "")
+`${indent2}except Exception:  # pylint: disable=broad-except
+`${indent2}    query = ""
+
+`${indent2}if _is_soft_blocked_serp(query, results):
+`${indent2}    raise SearxEngineAccessDeniedException(
+`${indent2}        message="Bing returned an unrelated soft-block SERP for a Chinese query"
+`${indent2}    )
+
+`${indent2}return results
+"@
+    )
+}
 if (
     $BingWebText -notmatch 'engine_region = "zh-CN"' -or
     $BingWebText -notmatch '(?m)^paging = True$' -or
-    $BingWebText -notmatch 'query_params\["first"\]'
+    $BingWebText -notmatch 'query_params\["first"\]' -or
+    $BingWebText -notmatch 'setlang' -or
+    $BingWebText -notmatch '_is_soft_blocked_serp' -or
+    $BingWebText -notmatch 'SearxEngineCaptchaException' -or
+    ([regex]::Matches($BingWebText, 'cf-turnstile')).Count -ne 1
 ) {
-    throw "Bing market/pagination patch for searx/engines/bing.py did not apply"
+    throw "Bing market/pagination/soft-block patch for searx/engines/bing.py did not apply"
 }
 [IO.File]::WriteAllText($BingWeb, $BingWebText, (New-Object Text.UTF8Encoding($false)))
 
