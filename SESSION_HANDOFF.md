@@ -57,11 +57,12 @@ Local ignored ZIP:
 
 - Branch: `codex/rebuild-2026`
 - Feature commit: `ead98199ca57bd05cab970ef6146eef9194747bd`
-- Remote: `origin/codex/rebuild-2026` matched that commit after push
-  (`b3f3717..ead9819`)
-- This handoff commit updates documentation only after the feature push.
-- Working tree should be clean after the handoff commit; `.build/`, `dist/`,
-  and `config/.secret` remain Git-ignored local artifacts.
+- Prior handoff commit: `79384675a006958deccd967e014bdf0a253785d7`
+- Current tip: this commit (Git-state clarification); confirm with
+  `git rev-parse HEAD` and `git status -sb`
+- Remote tracking branch is updated when this tip is pushed
+- Working tree clean after push; ignored only: `.build/`, `dist/`,
+  `config/.secret`
 
 ## Remaining work
 
