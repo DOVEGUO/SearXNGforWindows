@@ -48,6 +48,7 @@ noise). Fix relevance when Google is down or Bing returns proxy junk.
 ## Git state
 
 - Branch: `codex/rebuild-2026`
+- Tip after push: `9b6da0cce35dc8150a6d2f1674a97f7cbae75578`
 - Ignored only: `.build/`, `dist/`, `config/.secret`
 
 ## Remaining work / ops note
