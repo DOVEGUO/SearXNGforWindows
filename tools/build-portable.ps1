@@ -262,19 +262,33 @@ if ($WebAdapterText -match "preferences\.client\.locale_tag or 'all'") {
 }
 [IO.File]::WriteAllText($WebAdapter, $WebAdapterText, (New-Object Text.UTF8Encoding($false)))
 
-# Google CSE: keep hl only; lr/cr/gl change ranking versus google.com.
+# Google CSE: skip lr/cr; force Mainland zh-CN+gl=cn on neutral/all and zh-CN
+# because upstream traits map zh-CN -> HK (Traditional Chinese bias).
 $GoogleCse = Join-Path $SitePackages "searx\engines\google_cse.py"
 $GoogleCseText = [IO.File]::ReadAllText($GoogleCse)
 $GoogleCseText = [regex]::Replace(
     $GoogleCseText,
-    '(?m)^\s*if info\.get\("lr"\):\r?\n\s*args\["lr"\] = info\["lr"\]\r?\n\s*if info\.get\("cr"\):\r?\n\s*args\["cr"\] = info\["cr"\]\r?\n\s*if google_info\["country"\] not in \(None, "ZZ"\):\r?\n\s*args\["gl"\] = google_info\["country"\]\r?\n',
-    "    # Keep hl for UI language only; skip lr/cr/gl on this public CSE endpoint.`n"
+    '(?ms)    if info\.get\("lr"\):\r?\n        args\["lr"\] = info\["lr"\]\r?\n    if info\.get\("cr"\):\r?\n        args\["cr"\] = info\["cr"\]\r?\n    if google_info\["country"\] not in \(None, "ZZ"\):\r?\n        args\["gl"\] = google_info\["country"\]\r?\n    if token\["exp"\]:',
+    @'
+    # Skip lr/cr. Traits map zh-CN -> HK (TW bias); prefer CN for all/zh-CN.
+    sxng_locale = params.get("searxng_locale", "all")
+    if sxng_locale in ("all", "zh", "zh-CN") or sxng_locale.startswith("zh_Hans"):
+        args["hl"] = "zh-CN"
+        args["gl"] = "cn"
+    elif sxng_locale.startswith("zh"):
+        if google_info["country"] not in (None, "ZZ"):
+            args["gl"] = google_info["country"]
+    elif google_info["country"] not in (None, "ZZ"):
+        args["gl"] = google_info["country"]
+
+    if token["exp"]:
+'@
 )
 if (
     $GoogleCseText -match 'args\["lr"\]' -or
     $GoogleCseText -match 'args\["cr"\]' -or
-    $GoogleCseText -match 'args\["gl"\]' -or
-    $GoogleCseText -notmatch 'skip lr/cr/gl on this public CSE endpoint'
+    $GoogleCseText -notmatch 'args\["gl"\] = "cn"' -or
+    $GoogleCseText -notmatch 'sxng_locale = params\.get\("searxng_locale"'
 ) {
     throw "Google CSE locale-softening patch did not apply"
 }

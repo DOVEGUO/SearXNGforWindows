@@ -47,8 +47,9 @@ SearXNG 新增的 `google_cse` 实现，通过 Google Custom Search 的公开端
 
 最新版 SearXNG 已删除不可靠且占用较高内存的 fastText 输入语言识别。
 “自动检测”不再把浏览器首选语言当作引擎限制，而是使用中立的 `all`
-locale，让 Google CSE 与 Bing 更多根据查询本身推断语言；需要强制某一语言
-时，可在界面中手动选择，或使用 `:zh`、`:en`、`:fr` 等查询前缀。
+locale；本便携版在 Google CSE 上仍默认偏向大陆简体（`hl=zh-CN`、`gl=cn`），
+并避免上游把 `zh-CN` 映射成香港地区带来的繁体结果偏好。需要繁体或其他语言
+时，可在界面中手动选择，或使用 `:zh-TW`、`:en`、`:fr` 等查询前缀。
 
 ## 主题颜色
 
