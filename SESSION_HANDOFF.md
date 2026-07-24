@@ -2,6 +2,62 @@
 
 Updated: 2026-07-24 (Asia/Singapore)
 
+## Latest session: current upstream, Bing + Google categories, and scroll fix
+
+The repository remains pinned to official SearXNG commit
+`ef8f6470e0473a1548f175217aaa7b9346ce6973` (`2026.07.22+ef8f6470`), which was
+also the current upstream `master` during the audit on 2026-07-24.
+
+Implemented:
+
+- Default engines now include Google and Bing for general, news, and images.
+- Google images uses `google_cse` image mode. Google news uses the Google CSE
+  compatibility path because the dedicated Google News endpoint suspends
+  datacenter/proxy IPs with CAPTCHA responses.
+- Bing News now uses `/news/search` instead of the retired empty
+  `infinitescrollajax` payload. Bing Images uses `/images/search` instead of
+  the stale `async=1` payload. The affected `zh-CN` Bing news/image traits use
+  the parseable `en-US` market while preserving the Chinese query.
+- Bing autocomplete is enabled with a two-character threshold, and image proxy
+  is enabled.
+- Upstream automatic-language behavior is restored: `auto` follows the browser
+  locale; the removed local `auto -> all` divergence is no longer rebuilt.
+- Granian 2.7.9 and server requirements are included. The BAT launcher prefers
+  Granian on `127.0.0.1:3001` and falls back to Flask if Granian cannot load.
+- The compact result-page SVG logo follows `--wow-accent`.
+- The layered page background now scrolls normally and does not use
+  `background-attachment: fixed`, avoiding the Chrome compositor seam/flicker.
+- Theme cache key is `20260724-9`.
+
+Validation:
+
+- Clean rebuild passed at `.build/portable-final-audit-2`.
+- Granian reports `2.7.9`; server header is `granian`.
+- General search returned 30 result cards from Google and Bing.
+- News returned 28 cards: Bing News 8 and Google News 20, with no engine error.
+- Images returned 25 cards: Bing Images 5 and Google Images 20. The Chinese
+  query `南京城市` returned relevant Chinese/Nanjing images from both sources.
+- Browser UI showed `综合 / 图片 / 新闻`, `自动检测 (zh-CN)`, themed logo stroke
+  `rgb(199, 106, 46)`, and a continuous background at a 1190 px scroll offset.
+- Source and clean-build theme CSS SHA-256 matched:
+  `52C071C1256B41B1B843061BCF809B2C1F2E46F2E045DB6C09FF9562C15151D7`.
+- The `/autocompleter?q=OpenA` endpoint returned 12 Bing suggestions. A browser
+  preference cookie can override the configured provider with an empty value;
+  a fresh/default profile uses the configured Bing provider.
+- Final package: `dist/SearXNGforWindows-2026.07.22.zip`, 56,089,964 bytes,
+  SHA-256
+  `3FE8DCBCC0E7D66A0BCCAB9209C4CA385678E2FCF50E427D55D228FDD89FC520`;
+  `.secret` count is zero.
+
+Environment note:
+
+- Granian test listeners on ports `18897` through `18905` continued responding
+  after their owning PIDs disappeared from `Get-Process`, `tasklist`, and WMI;
+  Windows still reports the stale listener PIDs. This appears specific to
+  detached Granian processes in the Codex execution environment. No production
+  port (including 3001) was touched. If the ports matter later, restart the
+  Codex host/session or Windows before reusing them.
+
 ## Current state
 
 The requested preferences, multilingual search, responsive-title, and

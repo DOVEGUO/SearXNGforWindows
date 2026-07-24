@@ -39,7 +39,17 @@ echo   Settings    : %SEARXNG_SETTINGS_PATH%
 echo   Search proxy: http://127.0.0.1:7897
 echo.
 
-"%PYTHON%" -m searx.webapp
+"%PYTHON%" -c "import granian" >nul 2>&1
+if errorlevel 1 (
+    echo [WARN] Granian is unavailable on this Windows version.
+    echo        Falling back to the Flask compatibility server.
+    echo.
+    "%PYTHON%" -m searx.webapp
+) else (
+    echo   Server      : Granian
+    echo.
+    "%PYTHON%" -m granian --interface wsgi --host 127.0.0.1 --port 3001 searx.webapp:app
+)
 set "EXIT_CODE=%ERRORLEVEL%"
 
 echo.

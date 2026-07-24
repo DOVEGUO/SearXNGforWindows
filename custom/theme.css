@@ -240,7 +240,8 @@ body {
     radial-gradient(72rem 46rem at 6% -10%, var(--wow-glow-warm), transparent 57%),
     radial-gradient(62rem 44rem at 96% 4%, var(--wow-glow-cool), transparent 58%),
     var(--wow-bg);
-  background-attachment: fixed;
+  background-attachment: scroll;
+  background-repeat: no-repeat;
   transition: background-color 180ms ease, color 180ms ease;
 }
 
@@ -320,6 +321,17 @@ input:focus-visible {
 #send_search:focus-visible {
   color: var(--wow-accent-strong);
   background-color: var(--wow-accent-soft);
+}
+
+/* The compact result-page logo is an inline SVG with upstream hard-coded blue
+   presentation attributes, so it needs its own scoped theme override. */
+#search_logo svg circle,
+#search_logo svg path {
+  stroke: var(--wow-accent);
+}
+
+#search_logo svg rect {
+  fill: var(--wow-accent);
 }
 
 .sxng-theme-switcher {

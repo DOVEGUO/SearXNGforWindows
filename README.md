@@ -30,8 +30,13 @@ outgoing:
 它只影响 SearXNG 向 Google、Bing 等搜索引擎发出的请求。启动脚本不会修改
 Windows 系统代理、WinHTTP 代理或其他软件的代理设置。
 
-当前配置只保留 Google CSE 和 Bing，并关闭 HTTP/2，以避免 Clash 与旧版异步
-连接池组合中出现的 `anyio.EndOfStream` 问题。
+当前配置保留 Google 和 Bing 的网页、新闻及图片搜索，并启用 Bing 自动补全。
+图片请求通过 SearXNG 图片代理返回。HTTP/2 保持关闭，以避免 Clash 与旧版
+异步连接池组合中出现的 `anyio.EndOfStream` 问题。
+
+Google News 在数据中心或代理出口上容易触发验证码，因此新闻分类中的 Google
+来源使用 Google CSE 兼容实现。Bing 最新站点已停止旧的新闻无限滚动和图片
+异步入口，本项目在构建时改用仍可解析的标准新闻、图片搜索入口。
 
 Google 在 2026 年 7 月停止向旧的无 JavaScript HTML/GSA 请求返回搜索结果，
 因此 SearXNG 上游已将旧 `google` 引擎标记为 `inactive`。本便携版改用当前
@@ -40,9 +45,9 @@ SearXNG 新增的 `google_cse` 实现，通过 Google Custom Search 的公开端
 `google`。该公开端点仍可能受 Google 限流或策略变化影响；Bing 结果会继续
 明确标记为 Bing，不会伪装成 Google 结果。
 
-“自动检测”搜索语言不会强制使用浏览器界面语言，而是向 Google 和 Bing
-发送中性的语言设置，让搜索引擎根据本次输入的关键词判断语言。用户手动选择
-具体语言时，仍按所选语言筛选结果。
+最新版 SearXNG 已删除不可靠且占用较高内存的 fastText 输入语言识别。
+“自动检测”现在使用浏览器发送的首选语言；需要搜索其他语言时，可在界面中
+手动选择，或使用 `:zh`、`:en`、`:fr` 等查询前缀。
 
 ## 主题颜色
 
@@ -52,8 +57,9 @@ SearXNG 新增的 `google_cse` 实现，通过 Google Custom Search 的公开端
 
 ## 端口和反向代理
 
-SearXNG 默认只监听本机 `127.0.0.1:3001`。公网访问应由 IIS、Nginx 或其他
-反向代理转发到这个地址，不要直接把 Flask 开发服务器暴露到公网。
+SearXNG 默认只监听本机 `127.0.0.1:3001`。启动脚本优先使用最新版上游采用
+的 Granian WSGI 服务器；如果旧版 Windows 无法加载 Granian，则回退到 Flask
+兼容服务器。公网访问仍应由 IIS、Nginx 或其他反向代理转发到这个地址。
 
 如需改端口，编辑：
 
@@ -75,7 +81,7 @@ server:
 
 1. 下载 Python 3.11.9 嵌入版；
 2. 获取固定的 SearXNG 上游提交；
-3. 安装当前依赖；
+3. 安装当前运行依赖和 Granian 服务器依赖；
 4. 应用最小 Windows 兼容补丁；
 5. 生成可直接复制到服务器的便携目录。
 

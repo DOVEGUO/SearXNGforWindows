@@ -3,6 +3,10 @@ use_default_settings:
     keep_only:
       - google
       - bing
+      - google images
+      - bing images
+      - google news
+      - bing news
 
 general:
   debug: false
@@ -11,6 +15,8 @@ general:
 
 search:
   safe_search: 0
+  autocomplete: "bing"
+  autocomplete_min: 2
   default_lang: "auto"
   formats:
     - html
@@ -22,7 +28,7 @@ server:
   secret_key: "overridden-by-startup-script"
   limiter: false
   public_instance: false
-  image_proxy: false
+  image_proxy: true
   method: "POST"
 
 valkey:
@@ -50,5 +56,39 @@ engines:
     timeout: 30.0
 
   - name: bing
+    disabled: false
+    timeout: 30.0
+
+  - name: google images
+    engine: google_cse
+    categories:
+      - images
+      - web
+    google_categ: image
+    inactive: false
+    disabled: false
+    timeout: 30.0
+
+  - name: bing images
+    engine: bing_images
+    inactive: false
+    disabled: false
+    timeout: 30.0
+
+  - name: google news
+    # Google News frequently returns a CAPTCHA for datacenter/proxy IPs.
+    # Use Google's CSE-compatible HTML results in the news category so the
+    # Google source remains available instead of suspending the whole engine.
+    engine: google_cse
+    categories:
+      - news
+      - web
+    inactive: false
+    disabled: false
+    timeout: 30.0
+
+  - name: bing news
+    engine: bing_news
+    inactive: false
     disabled: false
     timeout: 30.0

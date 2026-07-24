@@ -99,20 +99,22 @@ $ResolvedCommit = (git -C $UpstreamBare rev-parse FETCH_HEAD).Trim()
 if (Test-Path -LiteralPath $UpstreamArchive) {
     Remove-Item -LiteralPath $UpstreamArchive -Force
 }
-git -C $UpstreamBare archive --format=zip --output=$UpstreamArchive FETCH_HEAD searx searxng_extra requirements.txt
+git -C $UpstreamBare archive --format=zip --output=$UpstreamArchive FETCH_HEAD searx searxng_extra requirements.txt requirements-server.txt
 if ($LASTEXITCODE -ne 0) {
     throw "Unable to create the SearXNG source archive"
 }
 Expand-Zip -Archive $UpstreamArchive -Destination $UpstreamSource
 
 $Requirements = Join-Path $UpstreamSource "requirements.txt"
+$ServerRequirements = Join-Path $UpstreamSource "requirements-server.txt"
 Write-Host "Installing current SearXNG dependencies"
 & $PythonExe -m pip install `
     --disable-pip-version-check `
     --no-warn-script-location `
     --no-cache-dir `
     --target $SitePackages `
-    -r $Requirements
+    -r $Requirements `
+    -r $ServerRequirements
 if ($LASTEXITCODE -ne 0) {
     throw "Dependency installation failed with exit code $LASTEXITCODE"
 }
@@ -160,6 +162,92 @@ if ($WebUtilsText -match "file_list\.append\(str\(f\.relative_to\(static_path\)\
 }
 [IO.File]::WriteAllText($WebUtils, $WebUtilsText, (New-Object Text.UTF8Encoding($false)))
 
+# Bing retired the HTML payload from its infinitescrollajax endpoint while the
+# normal news search endpoint still returns the markup parsed by bing_news.
+$BingNews = Join-Path $SitePackages "searx\engines\bing_news.py"
+$BingNewsText = [IO.File]::ReadAllText($BingNews)
+$BingNewsText = $BingNewsText.Replace(
+    '    params["url"] = base_url + "/news/infinitescrollajax?" + urlencode(query_params)',
+    '    params["url"] = base_url + "/news/search?" + urlencode(query_params)'
+)
+$BingNewsText = $BingNewsText.Replace(
+    '    # - example: https://www.bing.com/news/infinitescrollajax?q=london&first=1',
+    "    # Bing's infinitescrollajax endpoint currently returns an empty HTTP 200.`n    # The normal endpoint serves the ``newsitem`` markup parsed below."
+)
+$BingNewsText = [regex]::Replace(
+    $BingNewsText,
+    '(?m)^\s*"InfiniteScroll": 1,\r?\n',
+    ''
+)
+$BingNewsText = $BingNewsText.Replace('paging = True', 'paging = False')
+$BingNewsText = [regex]::Replace(
+    $BingNewsText,
+    '(?m)^\s*page = int\(params\.get\("pageno", 1\)\) - 1\r?\n',
+    ''
+)
+$BingNewsText = [regex]::Replace(
+    $BingNewsText,
+    '(?m)^\s*# to simplify the page count lets use the default of 10 images per page\r?\n\s*"first": page \* 10 \+ 1,\r?\n\s*"SFX": page,\r?\n',
+    ''
+)
+$BingNewsText = $BingNewsText.Replace(
+    '    engine_traits.regions["zh-CN"] = "en-hk"',
+    '    engine_traits.regions["zh-CN"] = "en-US"'
+)
+if (
+    $BingNewsText -match 'params\["url"\].*/news/infinitescrollajax\?' -or
+    $BingNewsText -notmatch '/news/search\?' -or
+    $BingNewsText -match '"InfiniteScroll": 1' -or
+    $BingNewsText -match '"first": page' -or
+    $BingNewsText -match '(?m)^paging = True$' -or
+    $BingNewsText -match 'regions\["zh-CN"\] = "en-hk"'
+) {
+    throw "Bing News endpoint compatibility patch did not apply"
+}
+[IO.File]::WriteAllText($BingNews, $BingNewsText, (New-Object Text.UTF8Encoding($false)))
+
+$BingImages = Join-Path $SitePackages "searx\engines\bing_images.py"
+$BingImagesText = [IO.File]::ReadAllText($BingImages)
+$BingImagesText = [regex]::Replace(
+    $BingImagesText,
+    '(?m)^\s*"async": "1",\r?\n',
+    ''
+)
+$BingImagesText = $BingImagesText.Replace(
+    '    params["url"] = base_url + "/images/async?" + urlencode(query_params)',
+    '    params["url"] = base_url + "/images/search?" + urlencode(query_params)'
+)
+if (
+    $BingImagesText -match '"async": "1"' -or
+    $BingImagesText -match 'params\["url"\].*/images/async\?' -or
+    $BingImagesText -notmatch '/images/search\?'
+) {
+    throw "Bing Images endpoint compatibility patch did not apply"
+}
+[IO.File]::WriteAllText($BingImages, $BingImagesText, (New-Object Text.UTF8Encoding($false)))
+
+$EngineTraits = Join-Path $SitePackages "searx\data\engine_traits.json"
+$EngineTraitsText = [IO.File]::ReadAllText($EngineTraits)
+$EngineTraitsText = [regex]::Replace(
+    $EngineTraitsText,
+    '(?s)("bing images":\s*\{.*?"regions":\s*\{.*?)"zh-CN": "zh-cn"',
+    '$1"zh-CN": "en-US"',
+    1
+)
+$EngineTraitsText = $EngineTraitsText.Replace(
+    '      "zh-CN": "en-hk",',
+    '      "zh-CN": "en-US",'
+)
+$EngineTraitsObject = $EngineTraitsText | ConvertFrom-Json
+if (
+    $EngineTraitsText -match '"zh-CN": "en-hk"' -or
+    $EngineTraitsObject.'bing images'.regions.'zh-CN' -ne 'en-US' -or
+    $EngineTraitsObject.'bing news'.regions.'zh-CN' -ne 'en-US'
+) {
+    throw "Bing zh-CN region compatibility patch did not apply"
+}
+[IO.File]::WriteAllText($EngineTraits, $EngineTraitsText, (New-Object Text.UTF8Encoding($false)))
+
 # Relative redirects remain valid behind reverse proxies that do not forward a
 # usable Host header.  Absolute redirects otherwise become "http:///".
 $WebApp = Join-Path $SitePackages "searx\webapp.py"
@@ -179,38 +267,6 @@ if ($PreferencesBlock -match "url_for\('index', _external=True\)") {
 }
 $WebAppText = $WebAppText.Substring(0, $PreferencesStart) + $PreferencesBlock + $WebAppText.Substring($PreferencesEnd)
 [IO.File]::WriteAllText($WebApp, $WebAppText, (New-Object Text.UTF8Encoding($false)))
-
-# SearXNG's upstream "auto" choice follows the browser Accept-Language header.
-# For this multilingual instance, use the neutral locale so Google and Bing can
-# infer the language from the query instead.
-$WebAdapter = Join-Path $SitePackages "searx\webadapter.py"
-$WebAdapterText = [IO.File]::ReadAllText($WebAdapter)
-$AutoLanguagePattern = "(?m)^    if query_lang == 'auto':\r?\n        query_lang = preferences\.client\.locale_tag or 'all'\r?$"
-$AutoLanguageNew = @"
-    if query_lang == 'auto':
-        # Do not force the browser's UI language onto the search engines.
-        # With the neutral locale, Google and Bing can infer the language from
-        # the query itself, which is more accurate for multilingual users.
-        query_lang = 'all'
-"@.TrimEnd()
-$WebAdapterText = [regex]::Replace($WebAdapterText, $AutoLanguagePattern, $AutoLanguageNew)
-if ($WebAdapterText -match "query_lang = preferences\.client\.locale_tag or 'all'") {
-    throw "Query-language auto-detection patch did not apply"
-}
-[IO.File]::WriteAllText($WebAdapter, $WebAdapterText, (New-Object Text.UTF8Encoding($false)))
-
-# The effective locale is deliberately neutral in auto mode, so do not render
-# the implementation value "(all)" as if it were the detected query language.
-$LanguageFilter = Join-Path $SitePackages "searx\templates\simple\filters\languages.html"
-$LanguageFilterText = [IO.File]::ReadAllText($LanguageFilter)
-$LanguageFilterText = $LanguageFilterText.Replace(
-    "{{- _('Auto-detect') }} ({{ search_language }})  {{- '' -}}",
-    "{{- _('Auto-detect') }}  {{- '' -}}"
-)
-if ($LanguageFilterText -match "\(\{\{ search_language \}\}\)") {
-    throw "Auto-language label patch did not apply"
-}
-[IO.File]::WriteAllText($LanguageFilter, $LanguageFilterText, (New-Object Text.UTF8Encoding($false)))
 
 # Replace upstream project links with the operator's legal footer.
 $BaseTemplate = Join-Path $SitePackages "searx\templates\simple\base.html"
@@ -238,13 +294,13 @@ $BaseTemplateText = $BaseTemplateText.Replace(
 $BaseTemplateText = $BaseTemplateText.Replace(
     '  <script type="module" src="{{ url_for(''static'', filename=''sxng-core.min.js'') }}" client_settings="{{ client_settings }}"></script>',
     '  <script type="module" src="{{ url_for(''static'', filename=''sxng-core.min.js'') }}" client_settings="{{ client_settings }}"></script>' + [Environment]::NewLine +
-    '  <script defer src="{{ url_for(''static'', filename=''themes/simple/wowtran-theme.js'') }}?v=20260724-7"></script>'
+    '  <script defer src="{{ url_for(''static'', filename=''themes/simple/wowtran-theme.js'') }}?v=20260724-9"></script>'
 )
 $BaseTemplateText = [regex]::Replace(
     $BaseTemplateText,
     '  \{% endif %\}\r?\n  \{% if get_setting\(''server\.limiter''\) or get_setting\(''server\.public_instance''\) %\}',
     '  {% endif %}' + [Environment]::NewLine +
-    '  <link rel="stylesheet" href="{{ url_for(''static'', filename=''themes/simple/wowtran-theme.css'') }}?v=20260724-7" type="text/css" media="screen">' + [Environment]::NewLine +
+    '  <link rel="stylesheet" href="{{ url_for(''static'', filename=''themes/simple/wowtran-theme.css'') }}?v=20260724-9" type="text/css" media="screen">' + [Environment]::NewLine +
     '  {% if get_setting(''server.limiter'') or get_setting(''server.public_instance'') %}',
     1
 )
@@ -326,6 +382,7 @@ Copy-Item -LiteralPath (Join-Path $RepositoryRoot "SearXNG for Windows.bat") -De
 Copy-Item -LiteralPath (Join-Path $RepositoryRoot "README.md") -Destination $OutputDirectory
 Copy-Item -LiteralPath (Join-Path $RepositoryRoot "LICENSE") -Destination $OutputDirectory
 Copy-Item -LiteralPath $Requirements -Destination (Join-Path $OutputDirectory "config\requirements.txt")
+Copy-Item -LiteralPath $ServerRequirements -Destination (Join-Path $OutputDirectory "config\requirements-server.txt")
 
 $BuildInfo = @"
 SearXNG commit: $ResolvedCommit
