@@ -248,6 +248,51 @@ if (
 }
 [IO.File]::WriteAllText($EngineTraits, $EngineTraitsText, (New-Object Text.UTF8Encoding($false)))
 
+# Neutral ``auto`` locale: do not inherit the browser UI language as an engine
+# hard-limit (zh-CN skewed Google CSE / Bing away from exact-match queries).
+$WebAdapter = Join-Path $SitePackages "searx\webadapter.py"
+$WebAdapterText = [IO.File]::ReadAllText($WebAdapter)
+$WebAdapterText = [regex]::Replace(
+    $WebAdapterText,
+    "(?m)^(?<indent>\s*)if query_lang == 'auto':\r?\n\k<indent>    query_lang = preferences\.client\.locale_tag or 'all'",
+    "`${indent}if query_lang == 'auto':`n`${indent}    # Neutral locale lets engines infer language from the query.`n`${indent}    query_lang = 'all'"
+)
+if ($WebAdapterText -match "preferences\.client\.locale_tag or 'all'") {
+    throw "Automatic-language neutrality patch for searx/webadapter.py did not apply"
+}
+[IO.File]::WriteAllText($WebAdapter, $WebAdapterText, (New-Object Text.UTF8Encoding($false)))
+
+# Google CSE: keep hl only; lr/cr/gl change ranking versus google.com.
+$GoogleCse = Join-Path $SitePackages "searx\engines\google_cse.py"
+$GoogleCseText = [IO.File]::ReadAllText($GoogleCse)
+$GoogleCseText = [regex]::Replace(
+    $GoogleCseText,
+    '(?m)^\s*if info\.get\("lr"\):\r?\n\s*args\["lr"\] = info\["lr"\]\r?\n\s*if info\.get\("cr"\):\r?\n\s*args\["cr"\] = info\["cr"\]\r?\n\s*if google_info\["country"\] not in \(None, "ZZ"\):\r?\n\s*args\["gl"\] = google_info\["country"\]\r?\n',
+    "    # Keep hl for UI language only; skip lr/cr/gl on this public CSE endpoint.`n"
+)
+if (
+    $GoogleCseText -match 'args\["lr"\]' -or
+    $GoogleCseText -match 'args\["cr"\]' -or
+    $GoogleCseText -match 'args\["gl"\]' -or
+    $GoogleCseText -notmatch 'skip lr/cr/gl on this public CSE endpoint'
+) {
+    throw "Google CSE locale-softening patch did not apply"
+}
+[IO.File]::WriteAllText($GoogleCse, $GoogleCseText, (New-Object Text.UTF8Encoding($false)))
+
+# Bing general: default mkt=zh-CN when SearXNG locale is neutral ``all``.
+$BingWeb = Join-Path $SitePackages "searx\engines\bing.py"
+$BingWebText = [IO.File]::ReadAllText($BingWeb)
+$BingWebText = [regex]::Replace(
+    $BingWebText,
+    '(?m)^(?<indent>\s*)engine_region = traits\.get_region\(params\["searxng_locale"\], traits\.all_locale\)\r?\n\r?\n\k<indent>override_accept_language\(params, engine_region\)',
+    "`${indent}engine_region = traits.get_region(params[`"searxng_locale`"], traits.all_locale)`n`${indent}# Without an explicit market Bing follows proxy egress locale.`n`${indent}if not engine_region or engine_region == `"clear`":`n`${indent}    engine_region = `"zh-CN`"`n`n`${indent}override_accept_language(params, engine_region)"
+)
+if ($BingWebText -notmatch 'engine_region = "zh-CN"') {
+    throw "Bing default-market patch for searx/engines/bing.py did not apply"
+}
+[IO.File]::WriteAllText($BingWeb, $BingWebText, (New-Object Text.UTF8Encoding($false)))
+
 # Relative redirects remain valid behind reverse proxies that do not forward a
 # usable Host header.  Absolute redirects otherwise become "http:///".
 $WebApp = Join-Path $SitePackages "searx\webapp.py"

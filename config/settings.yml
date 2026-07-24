@@ -58,6 +58,9 @@ engines:
   - name: bing
     disabled: false
     timeout: 30.0
+    # Prefer Google CSE in the mixed ranking; Bing via proxy is noisier for
+    # Chinese exact-match queries.
+    weight: 0.6
 
   - name: google images
     engine: google_cse
