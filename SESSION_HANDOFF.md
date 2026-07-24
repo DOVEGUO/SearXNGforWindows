@@ -44,10 +44,16 @@ Validation:
 - The `/autocompleter?q=OpenA` endpoint returned 12 Bing suggestions. A browser
   preference cookie can override the configured provider with an empty value;
   a fresh/default profile uses the configured Bing provider.
-- Final package: `dist/SearXNGforWindows-2026.07.22.zip`, 56,089,964 bytes,
+- Final package: `dist/SearXNGforWindows-2026.07.22.zip`, 56,092,771 bytes,
   SHA-256
-  `3FE8DCBCC0E7D66A0BCCAB9209C4CA385678E2FCF50E427D55D228FDD89FC520`;
+  `EB31CDCC62B3EB95C8D825F677E72FF30CA25691F9F71A7E88DF0FF16DB4D969`;
   `.secret` count is zero.
+- Packaging correction: the earlier `Compress-Archive -Path <root>\*` artifact
+  omitted files located directly at the portable root. The replacement
+  `tools/package-portable.ps1` uses `ZipFile.CreateFromDirectory` and fails if
+  BAT, README, LICENSE, or BUILD-INFO is absent. The corrected ZIP was extracted
+  and all required root files, `config/settings.yml`, and `python/python.exe`
+  were verified.
 
 Environment note:
 
@@ -138,10 +144,12 @@ Local ignored artifact:
 `dist/SearXNGforWindows-2026.07.22.zip`
 
 SHA-256:
-`ECFD620B496E63CCD161052328E23A80E3D5D91CFCF7D136FEEEF9313B10B603`
+`EB31CDCC62B3EB95C8D825F677E72FF30CA25691F9F71A7E88DF0FF16DB4D969`
 
-The ZIP contains 6,884 entries and no `config/.secret`. `.build/`, `dist/`,
-and runtime secrets remain intentionally ignored by Git.
+The corrected ZIP contains 6,959 entries. Its root contains
+`SearXNG for Windows.bat`, `README.md`, `LICENSE`, and `BUILD-INFO.txt`; it
+contains no runtime `.secret`. `.build/`, `dist/`, and runtime secrets remain
+intentionally ignored by Git.
 
 ## Deployment note
 

@@ -85,6 +85,14 @@ server:
 4. 应用最小 Windows 兼容补丁；
 5. 生成可直接复制到服务器的便携目录。
 
+生成发布 ZIP 时使用带根文件校验的打包脚本：
+
+```powershell
+.\tools\package-portable.ps1 `
+  -SourceDirectory ".\.build\portable" `
+  -DestinationZip ".\dist\SearXNGforWindows-2026.07.22.zip"
+```
+
 指定其他上游提交：
 
 ```powershell
