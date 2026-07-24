@@ -37,7 +37,8 @@ Diagnose and fix; ship a rebuild.
 
 `dist/SearXNGforWindows-2026.07.22.zip` (Git-ignored)
 
-- Size / SHA-256 filled after packaging in this session
+- Size: 55,627,504 bytes
+- SHA-256: `2770601ABCAE07528E6A7AB0CFC33BD9736DEAFA799B9FF050A8055B4FBB9E37`
 - Built from `.build/portable-paging-fix`
 - No packaged `.secret`
 
