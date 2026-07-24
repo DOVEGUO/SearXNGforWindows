@@ -252,6 +252,15 @@ footer {
   -webkit-backdrop-filter: blur(18px) saturate(1.25);
 }
 
+/* backdrop-filter creates a stacking context that traps .autocomplete's
+   z-index: 5000. On the results page the later .search_filters selects
+   (z-index: 100) then paint over the suggestion list. Lift the header so
+   the open autocomplete stays above language / time / safesearch controls. */
+body.results_endpoint #search_header {
+  position: relative;
+  z-index: 110;
+}
+
 #links_on_top {
   z-index: 1500;
 }

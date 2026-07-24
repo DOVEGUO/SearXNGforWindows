@@ -294,13 +294,13 @@ $BaseTemplateText = $BaseTemplateText.Replace(
 $BaseTemplateText = $BaseTemplateText.Replace(
     '  <script type="module" src="{{ url_for(''static'', filename=''sxng-core.min.js'') }}" client_settings="{{ client_settings }}"></script>',
     '  <script type="module" src="{{ url_for(''static'', filename=''sxng-core.min.js'') }}" client_settings="{{ client_settings }}"></script>' + [Environment]::NewLine +
-    '  <script defer src="{{ url_for(''static'', filename=''themes/simple/wowtran-theme.js'') }}?v=20260724-9"></script>'
+    '  <script defer src="{{ url_for(''static'', filename=''themes/simple/wowtran-theme.js'') }}?v=20260724-10"></script>'
 )
 $BaseTemplateText = [regex]::Replace(
     $BaseTemplateText,
     '  \{% endif %\}\r?\n  \{% if get_setting\(''server\.limiter''\) or get_setting\(''server\.public_instance''\) %\}',
     '  {% endif %}' + [Environment]::NewLine +
-    '  <link rel="stylesheet" href="{{ url_for(''static'', filename=''themes/simple/wowtran-theme.css'') }}?v=20260724-9" type="text/css" media="screen">' + [Environment]::NewLine +
+    '  <link rel="stylesheet" href="{{ url_for(''static'', filename=''themes/simple/wowtran-theme.css'') }}?v=20260724-10" type="text/css" media="screen">' + [Environment]::NewLine +
     '  {% if get_setting(''server.limiter'') or get_setting(''server.public_instance'') %}',
     1
 )
