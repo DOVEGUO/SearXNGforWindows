@@ -292,9 +292,14 @@ if (
 ) {
     throw "Google CSE locale-softening patch did not apply"
 }
+$GoogleCseText = [regex]::Replace($GoogleCseText, '(?m)^page_size = 20\r?$', 'page_size = 10')
+if ($GoogleCseText -notmatch 'page_size = 10') {
+    throw "Google CSE page_size patch did not apply"
+}
 [IO.File]::WriteAllText($GoogleCse, $GoogleCseText, (New-Object Text.UTF8Encoding($false)))
 
-# Bing general: default mkt=zh-CN when SearXNG locale is neutral ``all``.
+# Bing general: default mkt=zh-CN when SearXNG locale is neutral ``all``,
+# and enable HTML ``first`` pagination so next-page remains when Google is down.
 $BingWeb = Join-Path $SitePackages "searx\engines\bing.py"
 $BingWebText = [IO.File]::ReadAllText($BingWeb)
 $BingWebText = [regex]::Replace(
@@ -302,8 +307,22 @@ $BingWebText = [regex]::Replace(
     '(?m)^(?<indent>\s*)engine_region = traits\.get_region\(params\["searxng_locale"\], traits\.all_locale\)\r?\n\r?\n\k<indent>override_accept_language\(params, engine_region\)',
     "`${indent}engine_region = traits.get_region(params[`"searxng_locale`"], traits.all_locale)`n`${indent}# Without an explicit market Bing follows proxy egress locale.`n`${indent}if not engine_region or engine_region == `"clear`":`n`${indent}    engine_region = `"zh-CN`"`n`n`${indent}override_accept_language(params, engine_region)"
 )
-if ($BingWebText -notmatch 'engine_region = "zh-CN"') {
-    throw "Bing default-market patch for searx/engines/bing.py did not apply"
+$BingWebText = [regex]::Replace(
+    $BingWebText,
+    '(?m)^(categories = \["general", "web"\]\r?\n)safesearch = True',
+    "`$1paging = True`n_results_per_page = 10`nsafesearch = True"
+)
+$BingWebText = [regex]::Replace(
+    $BingWebText,
+    '(?m)^(?<indent>\s*)query_params: dict\[str, str \| int\] = \{\r?\n\k<indent>    "q": query,\r?\n\k<indent>    "adlt": _safesearch_map\.get\(params\.get\("safesearch", 0\), "off"\),\r?\n\k<indent>\}\r?\n\r?\n\k<indent>locale_params = get_locale_params\(engine_region\)',
+    "`${indent}query_params: dict[str, str | int] = {`n`${indent}    `"q`": query,`n`${indent}    `"adlt`": _safesearch_map.get(params.get(`"safesearch`", 0), `"off`"),`n`${indent}}`n`n`${indent}pageno = int(params.get(`"pageno`", 1) or 1)`n`${indent}if pageno > 1:`n`${indent}    query_params[`"first`"] = (pageno - 1) * _results_per_page + 1`n`n`${indent}locale_params = get_locale_params(engine_region)"
+)
+if (
+    $BingWebText -notmatch 'engine_region = "zh-CN"' -or
+    $BingWebText -notmatch '(?m)^paging = True$' -or
+    $BingWebText -notmatch 'query_params\["first"\]'
+) {
+    throw "Bing market/pagination patch for searx/engines/bing.py did not apply"
 }
 [IO.File]::WriteAllText($BingWeb, $BingWebText, (New-Object Text.UTF8Encoding($false)))
 

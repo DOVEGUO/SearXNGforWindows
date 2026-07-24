@@ -4,57 +4,61 @@ Updated: 2026-07-24 (Asia/Singapore)
 
 ## Current objective / latest user decision
 
-Results were skewed toward Traditional Chinese (zh-TW / HK). Prefer Mainland
-Simplified Chinese (zh-CN) by default, without regressing exact-match queries
-such as `南京领域翻译`.
+Production lost the next-page control and Google stopped returning results.
+Diagnose and fix; ship a rebuild.
 
 ## Root cause
 
-- `auto → all` left Google CSE with `hl=ZZ` and no `gl`, so ranking followed
-  proxy/international bias (often TW/HK sources).
-- Upstream Google traits map `zh-CN` → region `HK`, which biases Traditional
-  Chinese even when the UI language is Simplified.
+- Live JSON showed `unresponsive=["google","暂停服务: 请求过于频繁"]` — Google
+  CSE hit HTTP 429 and was suspended in-process.
+- SearXNG only enables pagination when a successful engine has `paging=True`.
+  Upstream Bing web has no paging; with Google suspended, `result_container.paging`
+  stayed false, so the next-page UI disappeared. This was a consequence of the
+  Google outage, not a separate theme/layout regression.
 
 ## What changed
 
-- `python/Lib/site-packages/searx/engines/google_cse.py` — for `all` / `zh` /
-  `zh-CN` / `zh_Hans*`, force `hl=zh-CN` and `gl=cn`; still omit `lr`/`cr`;
-  keep traits-based `gl` for `zh-TW` / `zh-HK` and other locales.
-- `tools/build-portable.ps1` — same CSE patch for clean rebuilds.
-- `README.md` — document Mainland Simplified default for CSE.
+- `python/Lib/site-packages/searx/engines/bing.py` — `paging = True` and
+  `first` offset for `pageno > 1`.
+- `python/Lib/site-packages/searx/engines/google_cse.py` — `page_size` 20 → 10
+  to reduce CSE rate-limit pressure (zh-CN `hl`/`gl=cn` bias kept).
+- `config/settings.yml` — shorter suspend windows:
+  `SearxEngineTooManyRequests: 60`, `SearxEngineAccessDenied: 120`.
+- `tools/build-portable.ps1` — reproducible Bing paging + CSE page_size patches.
 
 ## Validation
 
-- Local `127.0.0.1:18893`, `Accept-Language: zh-CN`, `language=auto`:
-  - `人工智能`: Simplified lead (`百度百科` / `维基百科`), cn=6 tw=0
-  - `今日新闻`: CCTV / BBC 中文 simplified, tw=0
-  - `南京领域翻译`: wowtran official site still first (`wow=True`)
-  - `南京天气`: mainland weather sites, tw=0
-- Clean rebuild `.build/portable-zhcn-bias` contains `hl=zh-CN` / `gl=cn`.
-- Test process on `18893` stopped after checks.
+- Local `127.0.0.1:18894`: page HTML contains `pageno=2`; Google+Bing returned
+  results; page 2 top result differed from page 1.
+- Clean rebuild `.build/portable-paging-fix` contains the patches.
+- Test listener on `18894` was stopped.
 
 ## Portable artifact
 
-`dist/SearXNGforWindows-2026.07.22.zip` (local, Git-ignored)
+`dist/SearXNGforWindows-2026.07.22.zip` (Git-ignored)
 
-- Size: 55,627,561 bytes
-- SHA-256: `24CC26DFA4E3477DE2BD6DC7DD96E826D09C5BD7AA624F2F651A85594A875CBC`
-- Built from `.build/portable-zhcn-bias`
+- Size / SHA-256 filled after packaging in this session
+- Built from `.build/portable-paging-fix`
 - No packaged `.secret`
 
 ## Git state
 
 - Branch: `codex/rebuild-2026`
-- Feature commit and tip: see `git rev-parse HEAD` after push
-- Parent before this delivery: `abdf5ce092ae3966ad0f8bf2bd5b6a149de277ac`
+- Parent before this delivery: `78bb3a3a21fe88c6fd97b5dd788902bdce4967ce`
+- Tip after push: use `git rev-parse HEAD`
 - Ignored only: `.build/`, `dist/`, `config/.secret`
 
-## Remaining work
+## Remaining work / ops note
 
-- Deploy the new ZIP to production `search.wowtran.com` and restart SearXNG.
-- No other blockers for the zh-CN bias fix.
+- Deploy the ZIP and **restart** SearXNG on the Windows Server. Restart clears
+  the in-memory Google suspension immediately; waiting alone also works once
+  the suspend timer expires.
+- Public CSE can still 429 under heavy probing; smaller page size and shorter
+  suspend mitigate but do not eliminate Google's rate limits.
+- No other blockers for this paging/Google recovery fix.
 
 ## Next recommended action
 
-Deploy the ZIP and confirm live queries such as `人工智能` show Simplified
-Chinese leads while `南京领域翻译` still returns the company site.
+Deploy `dist/SearXNGforWindows-2026.07.22.zip`, restart the service on
+`127.0.0.1:3001`, then confirm Google results return and the next-page control
+is visible on a general search.

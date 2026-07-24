@@ -18,6 +18,10 @@ search:
   autocomplete: "bing"
   autocomplete_min: 2
   default_lang: "auto"
+  # Recover faster when the public Google CSE endpoint returns HTTP 429.
+  suspended_times:
+    SearxEngineTooManyRequests: 60
+    SearxEngineAccessDenied: 120
   formats:
     - html
     - json
